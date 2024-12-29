@@ -13,7 +13,7 @@
     {#each { length: 25 }, i}
         <div class="w-24 h-24 overflow-hidden flex items-center border-2 p-2 {i === 12 && center !== undefined ? 'bg-zinc-100' : ''}">
             <span class="w-full text-center text-sm {i === 12 && center !== undefined ? 'font-bold' : ''}">
-                {i === 12 && center !== undefined ? center : shuffledItems[i > 12 && center ? i-1 : i]}
+                {i === 12 && center !== undefined ? center : shuffledItems[i > 12 && center !== undefined ? i-1 : i]}
             </span>
         </div>
     {/each}

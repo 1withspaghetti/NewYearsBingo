@@ -1,5 +1,7 @@
 <script lang="ts">
 	import '../app.css';
+	import { Toaster } from "$lib/components/ui/sonner/index.js";
+
 	let { children } = $props();
 </script>
 
@@ -11,3 +13,4 @@
 	<a href="https://github.com/1withspaghetti/NewYearsBingo" target="_blank" class="text-blue-500">GitHub</a>
 </div>
 
+<Toaster />

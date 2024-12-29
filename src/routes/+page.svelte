@@ -7,6 +7,12 @@
 	import { Button } from "$lib/components/ui/button";
     import Shuffle from "lucide-svelte/icons/Shuffle";
 	import BingoDocumentGenerator from "$lib/components/BingoDocumentGenerator.svelte";
+	import { onMount, tick } from "svelte";
+	import { bingoGameSettingsValidatorLax } from "$lib/validation/bingoGameSettingsValidator";
+    import { toast } from "svelte-sonner";
+	import { ZodError } from "zod";
+
+    let title = $state("Bingo Game");
 
     let centerItemChecked = $state(false);
     let centerItemText = $state("");
@@ -21,15 +27,61 @@
     }
 
     let board = $derived({center: centerItemChecked ? centerItemText : undefined, items: items.map(item=>item.text).filter(text=>text), seed: previewSeed});
+
+    async function copySettingsAsURL() {
+        const settings: IBingoGameSettings = {
+            title,
+            center: centerItemChecked ? centerItemText : undefined,
+            items: items.map(item=>item.text).filter(text=>text),
+        }
+
+        const url = new URL(window.location.href);
+        url.searchParams.set("gameSettings", btoa(JSON.stringify(settings)));
+        await navigator.clipboard.writeText(url.href);
+        toast.success("URL copied to clipboard");
+    }
+
+    // Read settings from URL if present
+    onMount(() => {
+        const url = new URL(window.location.href);
+        const gameSettings = url.searchParams.get("gameSettings");
+        if(gameSettings) {
+            try {
+                let settings: IBingoGameSettings = JSON.parse(atob(gameSettings));
+                settings = bingoGameSettingsValidatorLax.parse(settings) as IBingoGameSettings;
+                title = settings.title;
+                centerItemChecked = settings.center !== undefined;
+                centerItemText = settings.center || "";
+                items = settings.items.map((text) => ({id: nextId++, text}));
+                if (items.length == 0 || items[items.length - 1].text !== "") {
+                    items.push({id: nextId++, text: ""});
+                }
+            } catch(e) {
+                console.error(e);
+                tick().then(() => toast.error(`Could not import settings${e instanceof ZodError ? `: ${e.errors[0].message}` : ""}`));
+            }
+        }
+    });
 </script>
 <div class="flex flex-col items-center py-8">
     <h1 class="text-2xl sm:text-4xl font-bold">⭐ New Year's Bingo 📔</h1>
     <Separator class="my-8" />
-    <div class="flex flex-col lg:flex-row gap-8">
+    <div class="flex flex-col items-center lg:flex-row lg:items-start gap-8">
         <div class="flex flex-col w-full max-w-sm">
             <Label class="mb-6 text-center text-lg">Settings</Label>
 
-            <div class="flex items-top space-x-2 mb-4">
+            <div class="flex flex-col mb-6">
+                <Label id="title-label" for="title" class="mb-2">Game Title</Label>
+                <input 
+                    id="title"
+                    aria-describedby="title-label"
+                    bind:value={title}
+                    placeholder="Enter game title here"
+                    class="w-full p-1 border-input outline-none bg-zinc-100"
+                />
+            </div>
+
+            <div class="flex items-top space-x-2 mb-2">
                 <Checkbox id="center-item-checkbox" bind:checked={centerItemChecked} aria-labelledby="center-item-label" />
                 <div class="grid gap-1.5 leading-none">
                     <Label
@@ -57,7 +109,7 @@
 
             <Separator class="my-6" />
 
-            <Label class="mb-4">Bingo Items <span class="text-zinc-500">({items.filter(item=>item.text).length}/{centerItemChecked ? 24 : 25})</span></Label>
+            <Label class="mb-2">Bingo Items <span class="text-zinc-500">({items.filter(item=>item.text).length}/{centerItemChecked ? 24 : 25})</span></Label>
             <div class="flex flex-col">
                 {#each items as {id, text}, i (id)}
                     <input 
@@ -96,6 +148,12 @@
                         class="w-full p-1 border-input outline-none border-t first:border-t-0 bg-gradient-to-b from-zinc-100 to-zinc-100 last:to-white focus:!to-zinc-100 first:!to-zinc-100"
                     />
                 {/each}
+            </div>
+
+            <Separator class="my-6" />
+
+            <div class="flex justify-center gap-4">
+                <Button variant="outline" size="sm" onclick={copySettingsAsURL}>Copy Settings as URL</Button>
             </div>
         </div>
         <div class="flex flex-col">
