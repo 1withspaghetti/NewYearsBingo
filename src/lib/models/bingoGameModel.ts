@@ -5,7 +5,7 @@ const bingoGameSchema = new mongoose.Schema({
     title: { type: String, required: true },
     center: { type: String },
     items: { type: [String], required: true },
-    players: { type: [Types.ObjectId], ref: BingoPlayer.modelName, default: [] },
+    players: [{ type: Types.ObjectId, ref: BingoPlayer.modelName }],
 }, {
     virtuals: {
         url: {
