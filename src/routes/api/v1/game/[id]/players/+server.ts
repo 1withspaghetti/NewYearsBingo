@@ -16,6 +16,7 @@ export const POST: RequestHandler = async ({ params, request }) => {
         if (!game) return error(404, 'Game not found');
 
         let player = new BingoPlayer(validatedBody);
+        if (!player.seed) player.seed = Math.random().toString(36).substring(2, 15);
         const playerResult = await player.save();
 
         game.players.push(playerResult._id);

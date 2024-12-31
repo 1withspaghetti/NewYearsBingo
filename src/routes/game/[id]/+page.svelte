@@ -11,20 +11,27 @@
 	import BingoPreview from '$lib/components/BingoPreview.svelte';
 	import BingoDocumentGenerator from '$lib/components/BingoDocumentGenerator.svelte';
 	import AddNewPlayerButton from './AddNewPlayerButton.svelte';
+	import apiRequest from '$lib/util/apiClient';
+	import { goto, invalidate } from '$app/navigation';
 
     let { data }: { data: PageData } = $props();
 
-    let game = $state(data.game);
-    $effect(() => {
-        game = data.game;
-    });
+    let game = $derived(data.game);
+    function refreshData() {
+        invalidate("custom:game");
+    }
 
     let { board, player } = $derived.by(()=>{
-        const player = game.players.find(player => player.id == page.url.hash.slice(1));
+        const player = game.players.find(player => player.id == page.url.searchParams.get('player'));
         if (!player) return { board: {center: game.center, items: game.items, seed: ''}, player };
         return { board: {center: game.center, items: game.items, seed: player.seed}, player };
     });
     let hasBoard = $derived(!!player);
+
+    function setCurrentPlayer(playerId: string) {
+        page.url.searchParams.set('player', playerId);
+        goto(page.url.toString());
+    }
 
     async function copyLink() {
         await navigator.clipboard.writeText(window.location.href);
@@ -42,18 +49,15 @@
 
 
     function addPlayer(player: {name: string, seed?: string}) {
-        fetch(`/api/game/${game.id}/players`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(player),
-        }).catch(e => {
-            console.error(e);
-            toast.error("Failed to add player ("+e.message+")");
-        }).then(() => {
-            toast.success(`Player "${player.name}" added`);
-        });
+        apiRequest('POST', `/game/${game.id}/players`, player)
+            .then(() => {
+                toast.success(`Player "${player.name}" added`);
+            }).catch(e => {
+                console.error(e);
+                toast.error("Failed to add player ("+e.message+")");
+            }).finally(() => {
+                refreshData();
+            });
     }
 
     let pendingDeletePlayer: IBingoGamePlayer | undefined = $state();
@@ -66,9 +70,15 @@
     function deletePlayer(playerId: IBingoGamePlayer['id']) {
         pendingDeletePlayer = undefined;
         
-        // TODO: Implement api call to delete player
-        
-        toast.success("Player deleted");
+        apiRequest('DELETE', `/game/${game.id}/players/${playerId}`)
+            .catch(e => {
+                console.error(e);
+                toast.error("Failed to delete player ("+e.message+")");
+            }).then(() => {
+                toast.success(`Player deleted`);
+            }).finally(() => {
+                refreshData();
+            });
     }
 </script>
 
@@ -105,7 +115,7 @@
                 </Table.Header>
                 <Table.Body>
                     {#each game.players as player}
-                        <Table.Row class={page.url.hash == '#'+player.id ? "bg-muted/50" : "cursor-pointer"} tabindex={0} onclick={()=>window.location.href = `#${player.id}`}>
+                        <Table.Row class={page.url.searchParams.get('player') == player.id ? "bg-muted/50" : "cursor-pointer"} tabindex={0} onclick={()=>setCurrentPlayer(player.id)}>
                             <Table.Cell>{player.name}</Table.Cell>
                             <Table.Cell>{player.seed}</Table.Cell>
                             <Table.Cell>
@@ -127,8 +137,9 @@
                     {/each}
                 </Table.Body>
             </Table.Root>
-            <div class="flex justify-center mt-4">
+            <div class="flex justify-center gap-4 mt-4">
                 <AddNewPlayerButton submit={addPlayer} />
+                <Button variant="secondary" onclick={copyLink}>Invite Others</Button>
             </div>
         </div>
         <div class="flex flex-col">
@@ -137,18 +148,18 @@
             <div class="relative scale-75 sm:scale-100 mb-4">
                 <BingoPreview {board} />
                 {#if !hasBoard}
-                    <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-30 text-white text-lg font-bold">
-                        <p class="text-center">No player selected</p>
+                    <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm text-white text-xl font-bold">
+                        <p class="text-center">{game.players.length > 0 ? 'No player selected' : 'Add a player first'}</p>
                     </div>
                 {/if}
             </div>
             
             <div class="flex justify-center gap-4">
-                <BingoDocumentGenerator title={game.title} playerName={player?.name || 'Player'} board={board} filename="preview-bingo-sheet.pdf">
+                <BingoDocumentGenerator title={game.title} playerName={player?.name || 'Player'} board={board} filename="{encodeURIComponent(player?.name||'player')}-bingo-sheet.pdf">
                     {#snippet button(generate)}
-                        <Button variant="secondary" disabled={!hasBoard} onclick={generate}>
+                        <Button variant="default" disabled={!hasBoard} onclick={generate}>
                             <Printer class="mr-2 size-4" />
-                            Generate PDF
+                            Download PDF
                         </Button>
                     {/snippet}
                 </BingoDocumentGenerator>

@@ -9,7 +9,7 @@
     let { board }: Props = $props();
 
     let shuffledItems = $derived(seededRandom(board.seed).shuffle([...board.items]));
-    let hasCenter = board.center !== undefined;
+    let hasCenter = $derived(board.center !== undefined);
 </script>
 
 <div class="grid grid-cols-[repeat(5,1fr)] grid-rows-[repeat(5,1fr)] border-2">

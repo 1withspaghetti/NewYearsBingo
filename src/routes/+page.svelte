@@ -5,13 +5,15 @@
     import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import BingoPreview from "$lib/components/BingoPreview.svelte";
 	import { Button } from "$lib/components/ui/button";
-    import { Shuffle } from "lucide-svelte";
+    import { CirclePlay, Shuffle } from "lucide-svelte";
 	import BingoDocumentGenerator from "$lib/components/BingoDocumentGenerator.svelte";
 	import { onMount, tick } from "svelte";
 	import { bingoGameSettingsValidatorLax } from "$lib/validation/bingoGameSettingsValidator";
     import { toast } from "svelte-sonner";
 	import { ZodError } from "zod";
 	import { page } from "$app/state";
+	import apiRequest from "$lib/util/apiClient";
+	import { goto } from "$app/navigation";
 
     let title = $state("Bingo Game");
 
@@ -29,12 +31,16 @@
 
     let board = $derived({center: centerItemChecked ? centerItemText : undefined, items: items.map(item=>item.text).filter(text=>text), seed: previewSeed.toString()});
 
-    async function copySettingsAsURL() {
-        const settings: IBingoGameSettings = {
+    function getSettings(): IBingoGameSettings {
+        return {
             title,
             center: centerItemChecked ? centerItemText : undefined,
             items: items.map(item=>item.text).filter(text=>text),
         }
+    }
+    
+    async function copySettingsAsURL() {
+        const settings = getSettings();
 
         const url = new URL(window.location.href);
         url.searchParams.set("gameSettings", JSON.stringify(settings));
@@ -62,6 +68,19 @@
             }
         }
     });
+
+    function createGameRoom() {
+        const settings = getSettings();
+
+        apiRequest("POST", "/game", settings)
+            .then((res) => {
+                goto(res.game.url);
+            })
+            .catch((error) => {
+                console.error(error);
+                toast.error(`An error occurred while creating the game room (${error.message})`);
+            });
+    }
 </script>
 <div class="flex flex-col items-center py-8">
     <h1 class="text-2xl sm:text-4xl font-bold">⭐ New Year's Bingo 📔</h1>
@@ -163,18 +182,24 @@
                 <BingoPreview {board} />
             </div>
             
-            <div class="flex justify-center gap-4">
-                <Button variant="outline" onclick={shuffleItems}>
+            <div class="flex justify-center gap-4 mb-4">
+                <Button variant="outline" size="sm" onclick={shuffleItems}>
                     <Shuffle class="mr-2 size-4" />
-                    Shuffle
+                    Shuffle Preview
                 </Button>
                 <BingoDocumentGenerator {title} playerName="" board={board} filename="preview-bingo-sheet.pdf">
                     {#snippet button(generate)}
-                        <Button variant="secondary" onclick={generate}>
+                        <Button variant="secondary" size="sm" onclick={generate}>
                             Generate Preview PDF
                         </Button>
                     {/snippet}
                 </BingoDocumentGenerator>
+            </div>
+            <div class="flex justify-center gap-4">
+                <Button variant="default" onclick={createGameRoom}>
+                    <CirclePlay class="mr-2 size-4" />
+                    Create Game Room
+                </Button>
             </div>
         </div>
     </div>
