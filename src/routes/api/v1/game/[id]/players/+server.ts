@@ -4,13 +4,15 @@ import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { ZodError } from 'zod';
 import { BingoGame } from '$lib/models/bingoGameModel';
+import { idValidator } from '$lib/validation/idValidator';
 
 export const POST: RequestHandler = async ({ params, request }) => {
     try {
+        let id = idValidator.parse(params.id);
         let body = await request.json();
         let validatedBody = bingoGamePlayerSchema.parse(body);
 
-        let game = await BingoGame.findById(params.id);
+        let game = await BingoGame.findById(id);
         if (!game) return error(404, 'Game not found');
 
         let player = new BingoPlayer(validatedBody);

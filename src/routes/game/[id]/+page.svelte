@@ -10,15 +10,14 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import BingoPreview from '$lib/components/BingoPreview.svelte';
 	import BingoDocumentGenerator from '$lib/components/BingoDocumentGenerator.svelte';
-    import * as Dialog from "$lib/components/ui/dialog/index.js";
-	import { Label } from '$lib/components/ui/label';
-	import { Input } from '$lib/components/ui/input';
 	import AddNewPlayerButton from './AddNewPlayerButton.svelte';
 
     let { data }: { data: PageData } = $props();
 
-    let game = $derived(data.game);
-
+    let game = $state(data.game);
+    $effect(() => {
+        game = data.game;
+    });
 
     let { board, player } = $derived.by(()=>{
         const player = game.players.find(player => player.id == page.url.hash.slice(1));
@@ -43,9 +42,19 @@
 
 
     function addPlayer(player: {name: string, seed?: string}) {
-        // TODO: Implement api call to add player
+        fetch(`/api/game/${game.id}/players`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(player),
+        }).catch(e => {
+            console.error(e);
+            toast.error("Failed to add player ("+e.message+")");
+        }).then(() => {
+            toast.success(`Player "${player.name}" added`);
+        });
     }
-    
 
     let pendingDeletePlayer: IBingoGamePlayer | undefined = $state();
 
