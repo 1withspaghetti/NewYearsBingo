@@ -7,6 +7,7 @@ const bingoGameSchema = new mongoose.Schema({
     items: { type: [String], required: true },
     players: [{ type: Types.ObjectId, ref: BingoPlayer.modelName }],
 }, {
+    timestamps: true,
     virtuals: {
         url: {
             get: function() {
