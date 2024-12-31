@@ -10,6 +10,10 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import BingoPreview from '$lib/components/BingoPreview.svelte';
 	import BingoDocumentGenerator from '$lib/components/BingoDocumentGenerator.svelte';
+    import * as Dialog from "$lib/components/ui/dialog/index.js";
+	import { Label } from '$lib/components/ui/label';
+	import { Input } from '$lib/components/ui/input';
+	import AddNewPlayerButton from './AddNewPlayerButton.svelte';
 
     let { data }: { data: PageData } = $props();
 
@@ -35,6 +39,11 @@
             items: game.items,
         }
         window.open(`/?gameSettings=${encodeURIComponent(JSON.stringify(settings))}`, '_blank');
+    }
+
+
+    function addPlayer(player: {name: string, seed?: string}) {
+        // TODO: Implement api call to add player
     }
     
 
@@ -109,6 +118,9 @@
                     {/each}
                 </Table.Body>
             </Table.Root>
+            <div class="flex justify-center mt-4">
+                <AddNewPlayerButton submit={addPlayer} />
+            </div>
         </div>
         <div class="flex flex-col">
             <h2 class="text-xl font-bold mb-2">{hasBoard ? `${player?.name}'s Game` : 'Preview'}</h2>
