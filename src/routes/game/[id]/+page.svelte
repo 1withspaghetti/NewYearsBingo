@@ -8,10 +8,8 @@
     import { Link, Printer, Trash2 } from 'lucide-svelte';
     import { page } from '$app/state';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
-	import { goto } from '$app/navigation';
 	import BingoPreview from '$lib/components/BingoPreview.svelte';
 	import BingoDocumentGenerator from '$lib/components/BingoDocumentGenerator.svelte';
-	import type { IBingoBoard } from '$lib/types/bingoBoard';
 
     let { data }: { data: PageData } = $props();
 
@@ -20,7 +18,7 @@
 
     let { board, player } = $derived.by(()=>{
         const player = game.players.find(player => player.id == page.url.hash.slice(1));
-        if (!player) return { board: {center: game.center, items: game.items, seed: 0}, player };
+        if (!player) return { board: {center: game.center, items: game.items, seed: ''}, player };
         return { board: {center: game.center, items: game.items, seed: player.seed}, player };
     });
     let hasBoard = $derived(!!player);

@@ -7,7 +7,7 @@ interface IBingoGameSettings {
 interface IBingoGamePlayer {
     id: string;
     name: string;
-    seed: number;
+    seed: string;
 }
 
 interface IBingoGame extends IBingoGameSettings {

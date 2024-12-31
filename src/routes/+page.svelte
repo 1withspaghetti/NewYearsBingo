@@ -27,7 +27,7 @@
         previewSeed = Math.floor(Math.random()*4294967296);
     }
 
-    let board = $derived({center: centerItemChecked ? centerItemText : undefined, items: items.map(item=>item.text).filter(text=>text), seed: previewSeed});
+    let board = $derived({center: centerItemChecked ? centerItemText : undefined, items: items.map(item=>item.text).filter(text=>text), seed: previewSeed.toString()});
 
     async function copySettingsAsURL() {
         const settings: IBingoGameSettings = {

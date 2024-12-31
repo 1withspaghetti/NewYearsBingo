@@ -35,7 +35,7 @@ const gameData: IBingoGame = {
         {
             id: '1',
             name: 'Player 1',
-            seed: 1
+            seed: '1'
         }
     ],
 }
