@@ -5,7 +5,7 @@
     import { Checkbox } from "$lib/components/ui/checkbox/index.js";
 	import BingoPreview from "$lib/components/BingoPreview.svelte";
 	import { Button } from "$lib/components/ui/button";
-    import Shuffle from "lucide-svelte/icons/Shuffle";
+    import { Shuffle } from "lucide-svelte";
 	import BingoDocumentGenerator from "$lib/components/BingoDocumentGenerator.svelte";
 	import { onMount, tick } from "svelte";
 	import { bingoGameSettingsValidatorLax } from "$lib/validation/bingoGameSettingsValidator";
@@ -36,7 +36,7 @@
         }
 
         const url = new URL(window.location.href);
-        url.searchParams.set("gameSettings", btoa(JSON.stringify(settings)));
+        url.searchParams.set("gameSettings", JSON.stringify(settings));
         await navigator.clipboard.writeText(url.href);
         toast.success("URL copied to clipboard");
     }
@@ -47,7 +47,7 @@
         const gameSettings = url.searchParams.get("gameSettings");
         if(gameSettings) {
             try {
-                let settings: IBingoGameSettings = JSON.parse(atob(gameSettings));
+                let settings: IBingoGameSettings = JSON.parse(gameSettings);
                 settings = bingoGameSettingsValidatorLax.parse(settings) as IBingoGameSettings;
                 title = settings.title;
                 centerItemChecked = settings.center !== undefined;
