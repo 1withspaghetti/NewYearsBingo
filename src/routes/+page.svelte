@@ -11,6 +11,7 @@
 	import { bingoGameSettingsValidatorLax } from "$lib/validation/bingoGameSettingsValidator";
     import { toast } from "svelte-sonner";
 	import { ZodError } from "zod";
+	import { page } from "$app/state";
 
     let title = $state("Bingo Game");
 
@@ -43,8 +44,7 @@
 
     // Read settings from URL if present
     onMount(() => {
-        const url = new URL(window.location.href);
-        const gameSettings = url.searchParams.get("gameSettings");
+        const gameSettings = page.url.searchParams.get("gameSettings");
         if(gameSettings) {
             try {
                 let settings: IBingoGameSettings = JSON.parse(gameSettings);
@@ -68,7 +68,7 @@
     <Separator class="my-8" />
     <div class="flex flex-col items-center lg:flex-row lg:items-start gap-8">
         <div class="flex flex-col w-full max-w-sm">
-            <Label class="mb-6 text-center text-lg">Settings</Label>
+            <h2 class="mb-6 text-center text-lg">Settings</h2>
 
             <div class="flex flex-col mb-6">
                 <Label id="title-label" for="title" class="mb-2">Game Title</Label>
@@ -157,10 +157,10 @@
             </div>
         </div>
         <div class="flex flex-col">
-            <Label class="mb-6 text-center text-lg">Preview</Label>
+            <h2 class="mb-6 text-center text-lg">Preview</h2>
 
             <div class="scale-75 sm:scale-100 mb-4">
-                <BingoPreview {...board} />
+                <BingoPreview {board} />
             </div>
             
             <div class="flex justify-center gap-4">
@@ -168,7 +168,7 @@
                     <Shuffle class="mr-2 size-4" />
                     Shuffle
                 </Button>
-                <BingoDocumentGenerator board={board} filename="preview-bingo-sheet.pdf">
+                <BingoDocumentGenerator {title} playerName="" board={board} filename="preview-bingo-sheet.pdf">
                     {#snippet button(generate)}
                         <Button variant="secondary" onclick={generate}>
                             Generate Preview PDF

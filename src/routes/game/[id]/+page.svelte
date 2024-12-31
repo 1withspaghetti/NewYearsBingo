@@ -5,14 +5,25 @@
     import type { PageData } from './$types';
 	import * as Table from '$lib/components/ui/table';
     import * as Tooltip from "$lib/components/ui/tooltip";
-    import { Link, Trash2 } from 'lucide-svelte';
+    import { Link, Printer, Trash2 } from 'lucide-svelte';
     import { page } from '$app/state';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { goto } from '$app/navigation';
+	import BingoPreview from '$lib/components/BingoPreview.svelte';
+	import BingoDocumentGenerator from '$lib/components/BingoDocumentGenerator.svelte';
+	import type { IBingoBoard } from '$lib/types/bingoBoard';
 
     let { data }: { data: PageData } = $props();
 
     let game = $derived(data.game);
+
+
+    let { board, player } = $derived.by(()=>{
+        const player = game.players.find(player => player.id == page.url.hash.slice(1));
+        if (!player) return { board: {center: game.center, items: game.items, seed: 0}, player };
+        return { board: {center: game.center, items: game.items, seed: player.seed}, player };
+    });
+    let hasBoard = $derived(!!player);
 
     async function copyLink() {
         await navigator.clipboard.writeText(window.location.href);
@@ -55,7 +66,7 @@
     </h3>
     <Separator class="my-8" />
 
-    <div class="flex">
+    <div class="flex flex-col items-center lg:flex-row lg:items-start gap-16">
         <div class="flex flex-col max-w-md">
             <div class="flex gap-4">
                 <h2 class="text-xl font-bold mb-2">Bingo Items</h2>
@@ -100,6 +111,29 @@
                     {/each}
                 </Table.Body>
             </Table.Root>
+        </div>
+        <div class="flex flex-col">
+            <h2 class="text-xl font-bold mb-2">{hasBoard ? `${player?.name}'s Game` : 'Preview'}</h2>
+
+            <div class="relative scale-75 sm:scale-100 mb-4">
+                <BingoPreview {board} />
+                {#if !hasBoard}
+                    <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-30 text-white text-lg font-bold">
+                        <p class="text-center">No player selected</p>
+                    </div>
+                {/if}
+            </div>
+            
+            <div class="flex justify-center gap-4">
+                <BingoDocumentGenerator title={game.title} playerName={player?.name || 'Player'} board={board} filename="preview-bingo-sheet.pdf">
+                    {#snippet button(generate)}
+                        <Button variant="secondary" disabled={!hasBoard} onclick={generate}>
+                            <Printer class="mr-2 size-4" />
+                            Generate PDF
+                        </Button>
+                    {/snippet}
+                </BingoDocumentGenerator>
+            </div>
         </div>
     </div>
 </div>
