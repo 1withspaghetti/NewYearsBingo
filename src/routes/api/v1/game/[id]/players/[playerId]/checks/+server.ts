@@ -1,26 +1,26 @@
-import { BingoPlayer } from '$lib/models/bingoPlayerModel';
-import bingoGamePlayerSchema from '$lib/validation/bingoGamePlayerValidator';
-import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { ZodError } from 'zod';
-import { BingoGame } from '$lib/models/bingoGameModel';
 import { idValidator } from '$lib/validation/idValidator';
+import bingoGamePlayerChecksValidator from '$lib/validation/bingoGamePlayerChecksValidator';
+import { BingoPlayer } from '$lib/models/bingoPlayerModel';
+import { BingoGame } from '$lib/models/bingoGameModel';
+import { error, json } from '@sveltejs/kit';
+import { ZodError } from 'zod';
 
 export const POST: RequestHandler = async ({ params, request }) => {
     try {
         let id = idValidator.parse(params.id);
+        let playerId = idValidator.parse(params.playerId);
         let body = await request.json();
-        let validatedBody = bingoGamePlayerSchema.parse(body);
+        let validatedBody = bingoGamePlayerChecksValidator.parse(body);
 
         let game = await BingoGame.findById(id);
         if (!game) return error(404, 'Game not found');
 
-        let player = new BingoPlayer(validatedBody);
-        if (!player.seed) player.seed = Math.random().toString(36).substring(2, 15);
-        const playerResult = await player.save();
+        let player = await BingoPlayer.findById(playerId);
+        if (!player) return error(404, 'Player not found');
 
-        game.players.push(playerResult._id);
-        await game.save();
+        player.checks = validatedBody.checks;
+        let playerResult = await player.save();
 
         return json({ player: playerResult.toObject() });
     } catch (e) {

@@ -16,7 +16,8 @@
 
     let { data }: { data: PageData } = $props();
 
-    let game = $derived(data.game);
+    let game = $state(data.game); // Store game in state to prevent reactivity issues
+    $effect(() => { game = data.game; }); // Update game when data changes
     function refreshData() {
         invalidate("custom:game");
     }
@@ -58,6 +59,18 @@
             }).finally(() => {
                 refreshData();
             });
+    }
+
+    function updatePlayerChecks(checks: IBingoGamePlayer['checks']) {
+        if (!player) return;
+        game.players.find(p => p.id == player.id)!.checks = checks;
+        game = game; // Force update
+        apiRequest('POST', `/game/${game.id}/players/${player.id}/checks`, {checks})
+            .catch(e => {
+                console.error(e);
+                toast.error("Failed to update player checks ("+e.message+")");
+                refreshData();
+            })
     }
 
     let pendingDeletePlayer: IBingoGamePlayer | undefined = $state();
@@ -146,7 +159,7 @@
             <h2 class="text-xl font-bold mb-2">{hasBoard ? `${player?.name}'s Game` : 'Preview'}</h2>
 
             <div class="relative scale-75 sm:scale-100 mb-4">
-                <BingoPreview {board} />
+                <BingoPreview {board} checks={player?.checks} onChecksUpdate={updatePlayerChecks} />
                 {#if !hasBoard}
                     <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-30 backdrop-blur-sm text-white text-xl font-bold">
                         <p class="text-center">{game.players.length > 0 ? 'No player selected' : 'Add a player first'}</p>

@@ -37,7 +37,8 @@ import type { PageLoad } from './$types';
 //         {
 //             id: '1',
 //             name: 'Player 1',
-//             seed: '1'
+//             seed: '1',
+//             checks: [2, 5, 8]
 //         }
 //     ],
 // }
